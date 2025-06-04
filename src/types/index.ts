@@ -2,13 +2,14 @@
 export interface KnowledgeSpace {
   id: string;
   name: string;
-  type: 'personal' | 'organization';
+  type: 'personal' | 'organization' | 'specialized';
   isActive: boolean;
   documentCount: number;
   description?: string;
   lastUpdated?: Date;
   accessLevel?: 'private' | 'department' | 'organization';
   category?: string;
+  icon?: string;
 }
 
 // Chat Message Types
@@ -54,11 +55,30 @@ export interface SearchResult {
   snippet: string;
   spaceId: string;
   spaceName: string;
-  spaceType: 'personal' | 'organization';
+  spaceType: 'personal' | 'organization' | 'specialized';
   documentPath: string;
   matchScore: number;
   lastModified: Date;
   highlights?: string[];
+}
+
+// Scenario Types
+export interface Scenario {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  initialPersonalSpaces: KnowledgeSpace[];
+  initialOrgSpaces: KnowledgeSpace[];
+  specializedSpaces?: KnowledgeSpace[];
+  initialMessages: ChatMessage[];
+  workflowType: 'diabetes' | 'multi-domain';
+}
+
+export interface WorkflowConfig {
+  type: 'diabetes' | 'multi-domain';
+  triggerKeywords: string[];
+  responseTemplates: Record<string, string>;
 }
 
 // User Profile

@@ -1,78 +1,22 @@
 import { useState } from 'react'
-import type { KnowledgeSpace, ChatMessage } from './types'
-
-// Initial knowledge spaces setup
-const initialPersonalSpaces: KnowledgeSpace[] = [
-  {
-    id: 'p1',
-    name: 'My Clinical Notes',
-    type: 'personal',
-    isActive: true,
-    documentCount: 47,
-    description: 'Personal clinical observations'
-  },
-  {
-    id: 'p2',
-    name: 'Saved Research',
-    type: 'personal',
-    isActive: true,
-    documentCount: 23,
-    description: 'Research papers and articles'
-  },
-  {
-    id: 'p3',
-    name: 'Case Studies',
-    type: 'personal',
-    isActive: true,
-    documentCount: 15,
-    description: 'Interesting clinical cases'
-  }
-]
-
-const initialOrgSpaces: KnowledgeSpace[] = [
-  {
-    id: 'o1',
-    name: 'Emergency Medicine Protocols',
-    type: 'organization',
-    isActive: false,
-    documentCount: 156,
-    description: 'Hospital emergency procedures'
-  },
-  {
-    id: 'o2',
-    name: 'Critical Care Guidelines',
-    type: 'organization',
-    isActive: false,
-    documentCount: 89,
-    description: 'ICU and critical care protocols'
-  },
-  {
-    id: 'o3',
-    name: 'Pharmacy Treatment Standards',
-    type: 'organization',
-    isActive: false,
-    documentCount: 234,
-    description: 'Drug protocols and formulary'
-  }
-]
+import type { KnowledgeSpace, ChatMessage, Scenario } from './types'
+import ScenarioSelector from './components/ScenarioSelector'
 
 function App() {
-  const [personalSpaces] = useState(initialPersonalSpaces)
-  const [orgSpaces, setOrgSpaces] = useState(initialOrgSpaces)
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      content: 'Welcome! I can search your personal knowledge spaces and suggest organizational resources when needed. What would you like to know?',
-      sender: 'assistant',
-      timestamp: new Date(),
-      quickReplies: [
-        { id: 'q1', text: 'Show my active spaces', action: 'show_active' },
-        { id: 'q2', text: 'Search treatment protocols', action: 'search_protocols' },
-        { id: 'q3', text: 'Recent medical research', action: 'search_research' }
-      ]
-    }
-  ])
+  const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null)
+  const [personalSpaces, setPersonalSpaces] = useState<KnowledgeSpace[]>([])
+  const [orgSpaces, setOrgSpaces] = useState<KnowledgeSpace[]>([])
+  const [specializedSpaces, setSpecializedSpaces] = useState<KnowledgeSpace[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
+
+  const handleScenarioSelect = (scenario: Scenario) => {
+    setCurrentScenario(scenario)
+    setPersonalSpaces(scenario.initialPersonalSpaces)
+    setOrgSpaces(scenario.initialOrgSpaces)
+    setSpecializedSpaces(scenario.specializedSpaces || [])
+    setMessages(scenario.initialMessages)
+  }
 
   const activateOrgSpaces = (spaceIds: string[]) => {
     setOrgSpaces(spaces =>
@@ -82,8 +26,15 @@ function App() {
     )
   }
 
+  const activateSpecializedSpaces = (spaceIds: string[]) => {
+    setSpecializedSpaces(spaces =>
+      spaces.map(space =>
+        spaceIds.includes(space.id) ? { ...space, isActive: true } : space
+      )
+    )
+  }
+
   const handleSendMessage = (content: string) => {
-    // Only add user message if content is not empty (to avoid empty messages from re-runs)
     if (content.trim()) {
       const userMessage: ChatMessage = {
         id: `user-${Date.now()}`,
@@ -94,81 +45,88 @@ function App() {
       setMessages(prev => [...prev, userMessage])
     }
 
-    // Simulate search and response
+    // Route to appropriate workflow handler
     setTimeout(() => {
-      const activePersonal = personalSpaces.filter(s => s.isActive)
-      
-      // Check if query is about protocols/treatments that would benefit from org resources
-      const needsOrgData = content.toLowerCase().includes('protocol') || 
-                          content.toLowerCase().includes('treatment') ||
-                          content.toLowerCase().includes('guideline') ||
-                          content.toLowerCase().includes('diabetes') ||
-                          content.toLowerCase().includes('management') ||
-                          content.toLowerCase().includes('emergency')
+      if (currentScenario?.workflowType === 'diabetes') {
+        handleDiabetesWorkflow(content)
+      } else if (currentScenario?.workflowType === 'multi-domain') {
+        handleMultiDomainWorkflow(content)
+      }
+    }, 1000)
+  }
 
-      if (needsOrgData && orgSpaces.every(s => !s.isActive)) {
-        // First response: searched personal spaces with limited results
-        const searchResponse: ChatMessage = {
-          id: `search-${Date.now()}`,
-          content: `I searched your personal knowledge spaces and found limited information:
+  const handleDiabetesWorkflow = (content: string) => {
+    const activePersonal = personalSpaces.filter(s => s.isActive)
+    
+    const needsOrgData = content.toLowerCase().includes('protocol') || 
+                        content.toLowerCase().includes('treatment') ||
+                        content.toLowerCase().includes('guideline') ||
+                        content.toLowerCase().includes('diabetes') ||
+                        content.toLowerCase().includes('management')
+
+    if (needsOrgData && orgSpaces.every(s => !s.isActive)) {
+      // Personal search response
+      const searchResponse: ChatMessage = {
+        id: `search-${Date.now()}`,
+        content: `I searched your personal knowledge spaces and found limited information:
 
 **From My Clinical Notes:**
 - Basic diabetes patient observations
 - Individual case notes without standardized protocols
-- Personal clinical experiences and notes
 
 **From Saved Research:**
 - General diabetes research articles
 - Individual study findings
-- Academic papers on diabetes complications
 
 **From Case Studies:**
 - Patient cases mentioning diabetes management
-- Individual treatment outcomes
 
-However, I didn't find comprehensive, evidence-based clinical protocols or standardized treatment guidelines for diabetes management in your personal spaces.`,
+However, I didn't find comprehensive, evidence-based clinical protocols for diabetes management in your personal spaces.`,
+        sender: 'assistant',
+        timestamp: new Date(),
+        sources: activePersonal.slice(0, 2).map(space => ({
+          spaceId: space.id,
+          spaceName: space.name,
+          relevance: 'low' as const
+        }))
+      }
+      setMessages(prev => [...prev, searchResponse])
+
+      // Suggest org resources
+      setTimeout(() => {
+        const suggestionMessage: ChatMessage = {
+          id: `suggest-${Date.now()}`,
+          content: 'However, I found relevant information in organization-wide knowledge spaces. Would you like me to expand the search to include:',
           sender: 'assistant',
           timestamp: new Date(),
-          sources: activePersonal.slice(0, 2).map(space => ({
-            spaceId: space.id,
-            spaceName: space.name,
-            relevance: 'low' as const
-          }))
+          actions: [
+            { id: 'include-all', label: 'Include All', action: 'include_all_org', variant: 'primary' },
+            { id: 'select-specific', label: 'Select Specific', action: 'select_specific', variant: 'secondary' },
+            { id: 'no-thanks', label: 'No, thanks', action: 'decline_org', variant: 'ghost' }
+          ]
         }
-        setMessages(prev => [...prev, searchResponse])
+        setMessages(prev => [...prev, suggestionMessage])
 
-        // Follow-up suggestion for org resources
         setTimeout(() => {
-          const suggestionMessage: ChatMessage = {
-            id: `suggest-${Date.now()}`,
-            content: 'However, I found relevant information in organization-wide knowledge spaces. Would you like me to expand the search to include:',
-            sender: 'assistant',
-            timestamp: new Date(),
-            actions: [
-              { id: 'include-all', label: 'Include All', action: 'include_all_org', variant: 'primary' },
-              { id: 'select-specific', label: 'Select Specific', action: 'select_specific', variant: 'secondary' },
-              { id: 'no-thanks', label: 'No, thanks', action: 'decline_org', variant: 'ghost' }
-            ]
-          }
-          setMessages(prev => [...prev, suggestionMessage])
+          const orgOptionsMessage: ChatMessage = {
+            id: `org-options-${Date.now()}`,
+            content: `**Available organizational resources:**
 
-          // Show available org spaces with relevant document counts
-          setTimeout(() => {
-            const orgOptionsMessage: ChatMessage = {
-              id: `org-options-${Date.now()}`,
-              content: `**Available organizational resources:**\n\n🏥 **Emergency Medicine Protocols** (8 diabetes-related documents)\n🏥 **Critical Care Guidelines** (12 diabetes management protocols)\n💊 **Pharmacy Treatment Standards** (15 diabetes medication guidelines)`,
-              sender: 'system',
-              timestamp: new Date()
-            }
-            setMessages(prev => [...prev, orgOptionsMessage])
-          }, 500)
-        }, 1000)
-      } else if (orgSpaces.some(s => s.isActive)) {
-        // Search with org spaces included
-        const activeOrg = orgSpaces.filter(s => s.isActive)
-        const comprehensiveResponse: ChatMessage = {
-          id: `comprehensive-${Date.now()}`,
-          content: `**Type 2 Diabetes Management Protocol**
+🏥 **Emergency Medicine Protocols** (8 diabetes-related documents)
+🏥 **Critical Care Guidelines** (12 diabetes management protocols)
+💊 **Pharmacy Treatment Standards** (15 diabetes medication guidelines)`,
+            sender: 'system',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, orgOptionsMessage])
+        }, 500)
+      }, 1000)
+    } else if (orgSpaces.some(s => s.isActive)) {
+      // Show comprehensive diabetes protocol
+      const activeOrg = orgSpaces.filter(s => s.isActive)
+      const comprehensiveResponse: ChatMessage = {
+        id: `comprehensive-${Date.now()}`,
+        content: `**Type 2 Diabetes Management Protocol**
 *Based on ${activeOrg.map(s => s.name).join(' and ')}*
 
 **Initial Assessment:**
@@ -194,75 +152,154 @@ However, I didn't find comprehensive, evidence-based clinical protocols or stand
 **Emergency Protocols:**
 - **DKA**: pH <7.3, glucose >250mg/dL, ketones positive
 - **Hypoglycemia**: <70mg/dL - 15g fast-acting carbs, recheck in 15 min`,
-          sender: 'assistant',
-          timestamp: new Date(),
-          sources: activeOrg.map(space => ({
-            spaceId: space.id,
-            spaceName: space.name,
-            relevance: 'high' as const
-          })),
-          actions: [
-            { id: 'save-protocol', label: 'Save to My Notes', action: 'save_to_notes', variant: 'primary' },
-            { id: 'view-medication-guide', label: 'View Medication Guide', action: 'view_medication_guide', variant: 'secondary' },
-            { id: 'print-protocol', label: 'Print Quick Reference', action: 'print_protocol', variant: 'ghost' }
-          ]
-        }
-        setMessages(prev => [...prev, comprehensiveResponse])
-      } else {
-        // Regular personal search with detailed explanation
-        const personalResponse: ChatMessage = {
-          id: `personal-${Date.now()}`,
-          content: `I found some information in your personal knowledge spaces:
-
-**From My Clinical Notes:**
-- Patient case notes mentioning diabetes complications
-- Blood glucose monitoring observations
-- Personal treatment response notes
-
-**From Saved Research:**
-- Academic articles on diabetes pathophysiology
-- Research papers on newer diabetes medications
-- Studies on lifestyle interventions
-
-However, these personal resources lack comprehensive clinical protocols and standardized treatment guidelines. For evidence-based management protocols, I recommend accessing organizational knowledge spaces.`,
-          sender: 'assistant',
-          timestamp: new Date(),
-          sources: activePersonal.slice(0, 2).map(space => ({
-            spaceId: space.id,
-            spaceName: space.name,
-            relevance: 'medium' as const
-          })),
-          actions: [
-            { id: 'search-org', label: 'Search Organization Resources', action: 'search_org_diabetes', variant: 'primary' },
-            { id: 'view-personal', label: 'View Personal Notes', action: 'view_personal_notes', variant: 'secondary' }
-          ]
-        }
-        setMessages(prev => [...prev, personalResponse])
+        sender: 'assistant',
+        timestamp: new Date(),
+        sources: activeOrg.map(space => ({
+          spaceId: space.id,
+          spaceName: space.name,
+          relevance: 'high' as const
+        })),
+        actions: [
+          { id: 'save-protocol', label: 'Save to My Notes', action: 'save_to_notes', variant: 'primary' },
+          { id: 'view-medication-guide', label: 'View Medication Guide', action: 'view_medication_guide', variant: 'secondary' }
+        ]
       }
-    }, 1000)
+      setMessages(prev => [...prev, comprehensiveResponse])
+    }
+  }
+
+  const handleMultiDomainWorkflow = (content: string) => {
+    const isHeartQuery = content.toLowerCase().includes('heart') ||
+                        content.toLowerCase().includes('cardiac') ||
+                        content.toLowerCase().includes('cardiology') ||
+                        content.toLowerCase().includes('failure')
+
+    if (isHeartQuery && specializedSpaces.every(s => !s.isActive)) {
+      // Limited results from current spaces
+      const activeSpaces = [...personalSpaces, ...orgSpaces].filter(s => s.isActive)
+      const searchResponse: ChatMessage = {
+        id: `heart-search-${Date.now()}`,
+        content: `I found general information in your current spaces about diabetic complications, but limited specific cardiology protocols for heart failure management in diabetic patients.`,
+        sender: 'assistant',
+        timestamp: new Date(),
+        sources: activeSpaces.slice(0, 2).map(space => ({
+          spaceId: space.id,
+          spaceName: space.name,
+          relevance: 'medium' as const
+        }))
+      }
+      setMessages(prev => [...prev, searchResponse])
+
+      // Suggest specialized spaces
+      setTimeout(() => {
+        const suggestionMessage: ChatMessage = {
+          id: `specialized-suggest-${Date.now()}`,
+          content: 'I found specialized cardiology resources that would provide comprehensive guidelines for diabetic heart complications:',
+          sender: 'assistant',
+          timestamp: new Date(),
+          actions: [
+            { id: 'include-specialized', label: 'Include Both', action: 'include_specialized_spaces', variant: 'primary' },
+            { id: 'select-cardiology', label: 'Cardiology Only', action: 'select_cardiology', variant: 'secondary' },
+            { id: 'select-peer', label: 'Peer Studies Only', action: 'select_peer', variant: 'secondary' }
+          ]
+        }
+        setMessages(prev => [...prev, suggestionMessage])
+
+        setTimeout(() => {
+          const specializedOptionsMessage: ChatMessage = {
+            id: `specialized-options-${Date.now()}`,
+            content: `**Available specialized resources:**
+
+🫀 **Cardiology Guidelines** (Organization-wide) - 24 relevant protocols
+👥 **Peer Curated Heart Studies** (Co-doctor network) - 18 case studies`,
+            sender: 'system',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, specializedOptionsMessage])
+        }, 500)
+      }, 1000)
+    } else if (specializedSpaces.some(s => s.isActive)) {
+      // Show comprehensive heart + diabetes response
+      const activeAll = [...personalSpaces, ...orgSpaces, ...specializedSpaces].filter(s => s.isActive)
+      
+      const comprehensiveResponse: ChatMessage = {
+        id: `heart-comprehensive-${Date.now()}`,
+        content: `**Heart Failure Management in Diabetic Patients**
+*Integrating diabetes protocols with specialized cardiology guidelines*
+
+**Risk Assessment:**
+- Diabetic cardiomyopathy screening with echocardiogram
+- BNP/NT-proBNP levels (adjusted for diabetic kidney disease)
+- Assessment of coronary artery disease risk
+
+**Integrated Management:**
+- **SGLT-2 inhibitors**: Empagliflozin 10mg daily (dual cardiac + glycemic benefits)
+- **ACE inhibitors**: Lisinopril 10mg daily, titrate to max tolerated dose
+- **Beta-blockers**: Metoprolol succinate 25mg BID (heart failure specific)
+
+**Diabetes-Specific Considerations:**
+- Avoid TZDs (increased fluid retention risk)
+- Monitor for hypoglycemia with heart failure medications
+- Adjust insulin doses during acute decompensation
+
+**Monitoring Protocol:**
+- Weekly weights during titration
+- Monthly eGFR and electrolytes
+- Quarterly HbA1c and echocardiogram
+- Semi-annual stress testing if stable
+
+**Emergency Management:**
+- Acute decompensation: IV diuretics + glucose monitoring
+- Hypoglycemia risk increased with poor oral intake
+- Coordinate with endocrinology for insulin adjustments`,
+        sender: 'assistant',
+        timestamp: new Date(),
+        sources: activeAll.map(space => ({
+          spaceId: space.id,
+          spaceName: space.name,
+          relevance: space.type === 'specialized' ? 'high' as const : 'medium' as const
+        })),
+        actions: [
+          { id: 'save-integrated', label: 'Save Integration Protocol', action: 'save_integrated_protocol', variant: 'primary' },
+          { id: 'consult-cardiology', label: 'Request Cardiology Consult', action: 'request_consult', variant: 'secondary' }
+        ]
+      }
+      setMessages(prev => [...prev, comprehensiveResponse])
+    }
   }
 
   const handleQuickReply = (action: string) => {
     if (action === 'show_active') {
       const activePersonal = personalSpaces.filter(s => s.isActive)
       const activeOrg = orgSpaces.filter(s => s.isActive)
-      const statusMessage: ChatMessage = {
-        id: `status-${Date.now()}`,
-        content: `**Active Knowledge Spaces:**
+      const activeSpecialized = specializedSpaces.filter(s => s.isActive)
+      
+      let content = `**Active Knowledge Spaces:**
 
 **Personal (${activePersonal.length} active):**
 ${activePersonal.map(s => `• ${s.name} (${s.documentCount} documents)`).join('\n')}
 
 **Organization (${activeOrg.length} active):**
-${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} documents)`).join('\n') : 'None currently active'}`,
+${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} documents)`).join('\n') : 'None currently active'}`
+
+      if (activeSpecialized.length > 0) {
+        content += `
+
+**Specialized (${activeSpecialized.length} active):**
+${activeSpecialized.map(s => `${s.icon} ${s.name} (${s.documentCount} documents)`).join('\n')}`
+      }
+
+      const statusMessage: ChatMessage = {
+        id: `status-${Date.now()}`,
+        content,
         sender: 'system',
         timestamp: new Date()
       }
       setMessages(prev => [...prev, statusMessage])
-    } else if (action === 'search_protocols') {
+    } else if (action === 'search_diabetes_protocols') {
       handleSendMessage('What are the current diabetes management protocols?')
-    } else if (action === 'search_research') {
-      handleSendMessage('Show me recent research on emergency medicine')
+    } else if (action === 'search_heart_diabetes') {
+      handleSendMessage('What are the current guidelines for managing heart failure in diabetic patients?')
     }
   }
 
@@ -271,94 +308,24 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
       const allOrgIds = orgSpaces.map(s => s.id)
       activateOrgSpaces(allOrgIds)
       
-      // Directly show comprehensive response from organizational spaces
       setTimeout(() => {
-        const activeOrg = orgSpaces.map(space => ({ ...space, isActive: true }))
-        const comprehensiveResponse: ChatMessage = {
-          id: `comprehensive-${Date.now()}`,
-          content: `**Type 2 Diabetes Management Protocol**
-*Based on ${activeOrg.map(s => s.name).join(' and ')}*
-
-**Initial Assessment:**
-- HbA1c >7% indicates need for intensified management
-- Assess for diabetic complications (retinopathy, nephropathy, neuropathy)
-- Review cardiovascular risk factors
-
-**First-Line Treatment:**
-- **Metformin** 500mg BID, titrate to 1000mg BID (max 2000mg/day)
-- Target HbA1c <7% for most adults
-- Monitor eGFR before initiation (contraindicated if <30 mL/min/1.73m²)
-
-**Second-Line Options (if HbA1c remains >7% after 3 months):**
-- **GLP-1 agonists**: Semaglutide 0.25mg weekly (cardiovascular benefits)
-- **SGLT-2 inhibitors**: Empagliflozin 10mg daily (renal protection)
-- **Insulin**: Basal insulin (Glargine) starting 10 units at bedtime
-
-**Monitoring:**
-- HbA1c every 3 months until target achieved, then every 6 months
-- Annual comprehensive foot exam and eye screening
-- Quarterly blood pressure and lipid monitoring
-
-**Emergency Protocols:**
-- **DKA**: pH <7.3, glucose >250mg/dL, ketones positive
-- **Hypoglycemia**: <70mg/dL - 15g fast-acting carbs, recheck in 15 min`,
-          sender: 'assistant',
-          timestamp: new Date(),
-          sources: activeOrg.map(space => ({
-            spaceId: space.id,
-            spaceName: space.name,
-            relevance: 'high' as const
-          })),
-          actions: [
-            { id: 'save-protocol', label: 'Save to My Notes', action: 'save_to_notes', variant: 'primary' },
-            { id: 'view-medication-guide', label: 'View Medication Guide', action: 'view_medication_guide', variant: 'secondary' },
-            { id: 'print-protocol', label: 'Print Quick Reference', action: 'print_protocol', variant: 'ghost' }
-          ]
+        if (currentScenario?.workflowType === 'diabetes') {
+          handleDiabetesWorkflow('')
         }
-        setMessages(prev => [...prev, comprehensiveResponse])
       }, 500)
-    } else if (action === 'select_specific') {
-      const selectMessage: ChatMessage = {
-        id: `select-${Date.now()}`,
-        content: 'Which organizational spaces would you like to include?',
-        sender: 'assistant',
-        timestamp: new Date(),
-        quickReplies: [
-          { id: 'select-emergency', text: 'Emergency Medicine Protocols', action: 'select_emergency' },
-          { id: 'select-critical', text: 'Critical Care Guidelines', action: 'select_critical' },
-          { id: 'select-pharmacy', text: 'Pharmacy Treatment Standards', action: 'select_pharmacy' }
-        ]
-      }
-      setMessages(prev => [...prev, selectMessage])
-    } else if (action === 'select_emergency') {
-      activateOrgSpaces(['o1'])
-      const confirmMessage: ChatMessage = {
-        id: `confirm-emergency-${Date.now()}`,
-        content: '✓ Added Emergency Medicine Protocols to your search scope.',
-        sender: 'system',
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, confirmMessage])
-    } else if (action === 'decline_org') {
-      const declineMessage: ChatMessage = {
-        id: `decline-${Date.now()}`,
-        content: 'Understood. I\'ll continue searching only your personal knowledge spaces. You can always ask me to include organizational resources later.',
-        sender: 'assistant',
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, declineMessage])
-    } else if (action === 'search_org_diabetes') {
-      const suggestMessage: ChatMessage = {
-        id: `suggest-org-${Date.now()}`,
-        content: 'Would you like me to search organizational knowledge spaces for comprehensive diabetes management protocols?',
-        sender: 'assistant',
-        timestamp: new Date(),
-        actions: [
-          { id: 'include-all', label: 'Yes, Include All', action: 'include_all_org', variant: 'primary' },
-          { id: 'select-specific', label: 'Select Specific', action: 'select_specific', variant: 'secondary' }
-        ]
-      }
-      setMessages(prev => [...prev, suggestMessage])
+    } else if (action === 'include_specialized_spaces') {
+      const allSpecializedIds = specializedSpaces.map(s => s.id)
+      activateSpecializedSpaces(allSpecializedIds)
+      
+      setTimeout(() => {
+        if (currentScenario?.workflowType === 'multi-domain') {
+          handleMultiDomainWorkflow('heart failure diabetic patients')
+        }
+      }, 500)
+    } else if (action === 'select_cardiology') {
+      activateSpecializedSpaces(['ms1'])
+    } else if (action === 'select_peer') {
+      activateSpecializedSpaces(['ms2'])
     }
   }
 
@@ -370,13 +337,36 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
     }
   }
 
+  const handleBackToSelector = () => {
+    setCurrentScenario(null)
+    setPersonalSpaces([])
+    setOrgSpaces([])
+    setSpecializedSpaces([])
+    setMessages([])
+    setInputValue('')
+  }
+
+  // Show scenario selector if no scenario is selected
+  if (!currentScenario) {
+    return <ScenarioSelector onSelectScenario={handleScenarioSelect} />
+  }
+
+  // Main application interface
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar - Visual Status Only */}
+      {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-semibold text-gray-900">Knowledge Spaces</h1>
-          <p className="text-sm text-gray-600 mt-1">Status View Only</p>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-xl font-semibold text-gray-900">Knowledge Spaces</h1>
+            <button
+              onClick={handleBackToSelector}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Switch Scenario
+            </button>
+          </div>
+          <p className="text-sm text-gray-600">{currentScenario.name}</p>
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -412,7 +402,7 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
             </div>
           </div>
 
-          {/* Organization Section - Only show when at least one org space is active */}
+          {/* Organization Section */}
           {orgSpaces.some(space => space.isActive) && (
             <div>
               <div className="flex items-center mb-3">
@@ -441,6 +431,39 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
               </div>
             </div>
           )}
+
+          {/* Specialized Section */}
+          {specializedSpaces.some(space => space.isActive) && (
+            <div>
+              <div className="flex items-center mb-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <h2 className="text-sm font-medium text-gray-900">Specialized</h2>
+              </div>
+              <div className="space-y-2">
+                {specializedSpaces.filter(space => space.isActive).map(space => (
+                  <div key={space.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center">
+                          <span className="text-sm mr-2">{space.icon}</span>
+                          <h3 className="text-sm font-medium text-gray-900">{space.name}</h3>
+                        </div>
+                        <span className="text-xs text-gray-500">{space.documentCount}</span>
+                      </div>
+                      <p className="text-xs text-gray-600">{space.description}</p>
+                    </div>
+                    <div className="ml-3 w-8 h-4 rounded-full flex items-center bg-purple-600">
+                      <div className="w-3 h-3 rounded-full bg-white translate-x-4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -448,7 +471,7 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
       <div className="flex-1 flex flex-col">
         <div className="p-6 border-b border-gray-200 bg-white">
           <h2 className="text-xl font-semibold text-gray-900">Healthcare Assistant</h2>
-          <p className="text-sm text-gray-600">All interactions happen here - ask questions to get started</p>
+          <p className="text-sm text-gray-600">{currentScenario.description}</p>
         </div>
         
         <div className="flex-1 p-6 overflow-y-auto">
