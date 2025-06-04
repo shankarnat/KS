@@ -6,7 +6,6 @@ function App() {
   const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null)
   const [personalSpaces, setPersonalSpaces] = useState<KnowledgeSpace[]>([])
   const [orgSpaces, setOrgSpaces] = useState<KnowledgeSpace[]>([])
-  const [specializedSpaces, setSpecializedSpaces] = useState<KnowledgeSpace[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
 
@@ -14,25 +13,22 @@ function App() {
     setCurrentScenario(scenario)
     setPersonalSpaces(scenario.initialPersonalSpaces)
     setOrgSpaces(scenario.initialOrgSpaces)
-    setSpecializedSpaces(scenario.specializedSpaces || [])
     setMessages(scenario.initialMessages)
   }
 
-  const activateOrgSpaces = (spaceIds: string[]) => {
-    setOrgSpaces(spaces =>
-      spaces.map(space =>
+  const activateOrgSpaces = (spaceIds: string[], callback?: () => void) => {
+    setOrgSpaces(spaces => {
+      const updatedSpaces = spaces.map(space =>
         spaceIds.includes(space.id) ? { ...space, isActive: true } : space
       )
-    )
+      // Call callback after state update
+      if (callback) {
+        setTimeout(callback, 100)
+      }
+      return updatedSpaces
+    })
   }
 
-  const activateSpecializedSpaces = (spaceIds: string[]) => {
-    setSpecializedSpaces(spaces =>
-      spaces.map(space =>
-        spaceIds.includes(space.id) ? { ...space, isActive: true } : space
-      )
-    )
-  }
 
   const handleSendMessage = (content: string) => {
     if (content.trim()) {
@@ -126,32 +122,51 @@ However, I didn't find comprehensive, evidence-based clinical protocols for diab
       const activeOrg = orgSpaces.filter(s => s.isActive)
       const comprehensiveResponse: ChatMessage = {
         id: `comprehensive-${Date.now()}`,
-        content: `**Type 2 Diabetes Management Protocol**
-*Based on ${activeOrg.map(s => s.name).join(' and ')}*
+        content: `**Comprehensive Type 2 Diabetes Management Protocol**
+*Based on ${activeOrg.map(s => s.name).join(', ')} - Organization Standards*
 
-**Initial Assessment:**
+**🔍 Initial Assessment & Risk Stratification:**
 - HbA1c >7% indicates need for intensified management
-- Assess for diabetic complications (retinopathy, nephropathy, neuropathy)
-- Review cardiovascular risk factors
+- Comprehensive diabetic complications screening:
+  - **Retinopathy**: Annual dilated eye exam with ophthalmology
+  - **Nephropathy**: Annual microalbumin, eGFR monitoring
+  - **Neuropathy**: Annual foot exam with 10g monofilament test
+- **Cardiovascular risk assessment**: Calculate 10-year ASCVD risk score
+- **Mental health screening**: PHQ-2 for depression (common in T2DM)
 
-**First-Line Treatment:**
-- **Metformin** 500mg BID, titrate to 1000mg BID (max 2000mg/day)
-- Target HbA1c <7% for most adults
-- Monitor eGFR before initiation (contraindicated if <30 mL/min/1.73m²)
+**💊 Evidence-Based Treatment Ladder:**
 
-**Second-Line Options (if HbA1c remains >7% after 3 months):**
-- **GLP-1 agonists**: Semaglutide 0.25mg weekly (cardiovascular benefits)
-- **SGLT-2 inhibitors**: Empagliflozin 10mg daily (renal protection)
-- **Insulin**: Basal insulin (Glargine) starting 10 units at bedtime
+**Step 1 - First-Line (0-3 months):**
+- **Metformin** 500mg BID → titrate to 1000mg BID (max 2000mg/day)
+- Target HbA1c <7% for most adults (<8% if elderly/comorbid)
+- Monitor eGFR baseline and q6 months (contraindicated if <30 mL/min/1.73m²)
+- **Lifestyle**: Medical nutrition therapy + 150min/week moderate exercise
 
-**Monitoring:**
-- HbA1c every 3 months until target achieved, then every 6 months
-- Annual comprehensive foot exam and eye screening
-- Quarterly blood pressure and lipid monitoring
+**Step 2 - Combination Therapy (if HbA1c >7% after 3 months):**
+- **Preferred add-on** (based on patient profile):
+  - **SGLT-2 inhibitors** (Empagliflozin 10mg daily): Renal + cardiac protection
+  - **GLP-1 agonists** (Semaglutide 0.25mg weekly): Weight loss + CV benefits
+  - **DPP-4 inhibitors** (Sitagliptin 100mg daily): Weight neutral, low hypoglycemia risk
 
-**Emergency Protocols:**
-- **DKA**: pH <7.3, glucose >250mg/dL, ketones positive
-- **Hypoglycemia**: <70mg/dL - 15g fast-acting carbs, recheck in 15 min`,
+**Step 3 - Intensification:**
+- **Basal insulin** (Glargine) starting 10 units at bedtime OR 0.2 units/kg
+- Titrate by 2-4 units every 3 days based on fasting glucose target 80-130mg/dL
+
+**📊 Monitoring & Follow-up:**
+- **HbA1c**: Every 3 months until target achieved, then every 6 months
+- **Blood pressure**: Target <140/90 (or <130/80 if high CV risk)
+- **Lipids**: Statin therapy if LDL >70mg/dL or high CV risk
+- **Weight management**: Document BMI and waist circumference quarterly
+
+**🚨 Emergency Management:**
+- **Severe hypoglycemia**: Glucagon 1mg IM/SC if unconscious
+- **DKA warning signs**: pH <7.3, glucose >250mg/dL, ketones positive
+- **Sick day management**: Continue metformin, increase glucose monitoring
+
+**🎯 Quality Measures:**
+- Annual comprehensive foot exam and patient education
+- Annual influenza vaccination (increased infection risk)
+- Pneumococcal vaccination if ≥65 years or high-risk comorbidities`,
         sender: 'assistant',
         timestamp: new Date(),
         sources: activeOrg.map(space => ({
@@ -161,7 +176,8 @@ However, I didn't find comprehensive, evidence-based clinical protocols for diab
         })),
         actions: [
           { id: 'save-protocol', label: 'Save to My Notes', action: 'save_to_notes', variant: 'primary' },
-          { id: 'view-medication-guide', label: 'View Medication Guide', action: 'view_medication_guide', variant: 'secondary' }
+          { id: 'view-complications', label: 'View Complications Management', action: 'view_complications', variant: 'secondary' },
+          { id: 'ask-followup', label: 'Ask Follow-up Question', action: 'ask_followup', variant: 'ghost' }
         ]
       }
       setMessages(prev => [...prev, comprehensiveResponse])
@@ -174,12 +190,110 @@ However, I didn't find comprehensive, evidence-based clinical protocols for diab
                         content.toLowerCase().includes('cardiology') ||
                         content.toLowerCase().includes('failure')
 
-    if (isHeartQuery && specializedSpaces.every(s => !s.isActive)) {
+    const isDiabetesQuery = content.toLowerCase().includes('diabetes') ||
+                           content.toLowerCase().includes('protocol') ||
+                           content.toLowerCase().includes('treatment') ||
+                           content.toLowerCase().includes('guideline') ||
+                           content.toLowerCase().includes('management') ||
+                           content.toLowerCase().includes('hba1c') ||
+                           content.toLowerCase().includes('insulin') ||
+                           content.toLowerCase().includes('metformin')
+
+    const cardiologySpaces = orgSpaces.filter(s => s.id === 'mo3' || s.id === 'mo4')
+    const isCardiologyActive = cardiologySpaces.some(s => s.isActive)
+
+    console.log('Multi-domain workflow debug:', {
+      query: content,
+      isDiabetesQuery,
+      isHeartQuery,
+      isCardiologyActive
+    })
+
+    // Handle diabetes queries first (since diabetes protocols are already active)
+    if (isDiabetesQuery && !isHeartQuery) {
+      const activeOrg = orgSpaces.filter(s => s.isActive)
+      const diabetesResponse: ChatMessage = {
+        id: `diabetes-multidomain-${Date.now()}`,
+        content: `**Comprehensive Type 2 Diabetes Management Protocol**
+*Based on ${activeOrg.map(s => s.name).join(', ')} - Organization Standards*
+
+**🔍 Initial Assessment & Risk Stratification:**
+- HbA1c >7% indicates need for intensified management
+- Comprehensive diabetic complications screening:
+  - **Retinopathy**: Annual dilated eye exam with ophthalmology
+  - **Nephropathy**: Annual microalbumin, eGFR monitoring
+  - **Neuropathy**: Annual foot exam with 10g monofilament test
+- **Cardiovascular risk assessment**: Calculate 10-year ASCVD risk score
+- **Mental health screening**: PHQ-2 for depression (common in T2DM)
+
+**💊 Evidence-Based Treatment Ladder:**
+
+**Step 1 - First-Line (0-3 months):**
+- **Metformin** 500mg BID → titrate to 1000mg BID (max 2000mg/day)
+- Target HbA1c <7% for most adults (<8% if elderly/comorbid)
+- Monitor eGFR baseline and q6 months (contraindicated if <30 mL/min/1.73m²)
+- **Lifestyle**: Medical nutrition therapy + 150min/week moderate exercise
+
+**Step 2 - Combination Therapy (if HbA1c >7% after 3 months):**
+- **Preferred add-on** (based on patient profile):
+  - **SGLT-2 inhibitors** (Empagliflozin 10mg daily): Renal + cardiac protection
+  - **GLP-1 agonists** (Semaglutide 0.25mg weekly): Weight loss + CV benefits
+  - **DPP-4 inhibitors** (Sitagliptin 100mg daily): Weight neutral, low hypoglycemia risk
+
+**Step 3 - Intensification:**
+- **Basal insulin** (Glargine) starting 10 units at bedtime OR 0.2 units/kg
+- Titrate by 2-4 units every 3 days based on fasting glucose target 80-130mg/dL
+
+**📊 Monitoring & Follow-up:**
+- **HbA1c**: Every 3 months until target achieved, then every 6 months
+- **Blood pressure**: Target <140/90 (or <130/80 if high CV risk)
+- **Lipids**: Statin therapy if LDL >70mg/dL or high CV risk
+- **Weight management**: Document BMI and waist circumference quarterly
+
+**🚨 Emergency Management:**
+- **Severe hypoglycemia**: Glucagon 1mg IM/SC if unconscious
+- **DKA warning signs**: pH <7.3, glucose >250mg/dL, ketones positive
+- **Sick day management**: Continue metformin, increase glucose monitoring
+
+**🎯 Quality Measures:**
+- Annual comprehensive foot exam and patient education
+- Annual influenza vaccination (increased infection risk)
+- Pneumococcal vaccination if ≥65 years or high-risk comorbidities`,
+        sender: 'assistant',
+        timestamp: new Date(),
+        sources: activeOrg.map(space => ({
+          spaceId: space.id,
+          spaceName: space.name,
+          relevance: 'high' as const
+        })),
+        actions: [
+          { id: 'save-protocol', label: 'Save to My Notes', action: 'save_to_notes', variant: 'primary' },
+          { id: 'view-complications', label: 'View Complications Management', action: 'view_complications', variant: 'secondary' },
+          { id: 'ask-heart-followup', label: 'Ask About Heart Complications', action: 'ask_heart_followup', variant: 'ghost' }
+        ]
+      }
+      setMessages(prev => [...prev, diabetesResponse])
+    } else if (isHeartQuery && !isCardiologyActive) {
       // Limited results from current spaces
       const activeSpaces = [...personalSpaces, ...orgSpaces].filter(s => s.isActive)
       const searchResponse: ChatMessage = {
         id: `heart-search-${Date.now()}`,
-        content: `I found general information in your current spaces about diabetic complications, but limited specific cardiology protocols for heart failure management in diabetic patients.`,
+        content: `**Heart Failure in Diabetes - Current Knowledge Base Search**
+
+I found relevant information in your active diabetes protocols about cardiovascular complications:
+
+**From Diabetes Management Protocols:**
+- SGLT-2 inhibitors (Empagliflozin) provide cardiac protection in diabetic patients
+- Cardiovascular risk assessment is part of standard diabetes care
+- ACE inhibitors recommended for diabetic nephropathy (also beneficial for heart failure)
+
+**However, I found limited specific cardiology protocols for:**
+- Heart failure staging and classification in diabetic patients
+- Specialized heart failure medications and dosing
+- Diabetic cardiomyopathy management
+- Integrated monitoring protocols for dual conditions
+
+**⚠️ Gap Identified:** Comprehensive heart failure management requires specialized cardiology guidelines beyond general diabetes protocols.`,
         sender: 'assistant',
         timestamp: new Date(),
         sources: activeSpaces.slice(0, 2).map(space => ({
@@ -190,78 +304,125 @@ However, I didn't find comprehensive, evidence-based clinical protocols for diab
       }
       setMessages(prev => [...prev, searchResponse])
 
-      // Suggest specialized spaces
+      // Suggest cardiology organization spaces
       setTimeout(() => {
         const suggestionMessage: ChatMessage = {
-          id: `specialized-suggest-${Date.now()}`,
-          content: 'I found specialized cardiology resources that would provide comprehensive guidelines for diabetic heart complications:',
+          id: `cardiology-suggest-${Date.now()}`,
+          content: `**🔍 Solution: Expand to Cardiology Resources**
+
+I found specialized cardiology resources in our organization that can fill these knowledge gaps and provide comprehensive guidelines for heart failure management in diabetic patients.
+
+**Recommended next step:** Include cardiology protocols to get integrated, evidence-based management strategies that combine both diabetes and heart failure expertise.`,
           sender: 'assistant',
           timestamp: new Date(),
           actions: [
-            { id: 'include-specialized', label: 'Include Both', action: 'include_specialized_spaces', variant: 'primary' },
-            { id: 'select-cardiology', label: 'Cardiology Only', action: 'select_cardiology', variant: 'secondary' },
-            { id: 'select-peer', label: 'Peer Studies Only', action: 'select_peer', variant: 'secondary' }
+            { id: 'include-cardiology', label: 'Include Both Cardiology Resources', action: 'include_cardiology_spaces', variant: 'primary' },
+            { id: 'select-cardiology', label: 'Guidelines Only', action: 'select_cardiology', variant: 'secondary' },
+            { id: 'select-peer', label: 'Case Studies Only', action: 'select_peer', variant: 'secondary' }
           ]
         }
         setMessages(prev => [...prev, suggestionMessage])
 
         setTimeout(() => {
-          const specializedOptionsMessage: ChatMessage = {
-            id: `specialized-options-${Date.now()}`,
-            content: `**Available specialized resources:**
+          const cardiologyOptionsMessage: ChatMessage = {
+            id: `cardiology-options-${Date.now()}`,
+            content: `**Available Cardiology Resources:**
 
-🫀 **Cardiology Guidelines** (Organization-wide) - 24 relevant protocols
-👥 **Peer Curated Heart Studies** (Co-doctor network) - 18 case studies`,
+🫀 **Cardiology Guidelines** (Organization-wide)
+   • 124 protocols including diabetic cardiomyopathy management
+   • Heart failure staging, medication protocols, device considerations
+   • Risk stratification and monitoring guidelines
+
+👥 **Peer Curated Heart Studies** (Co-doctor network) 
+   • 67 case studies from practicing cardiologists
+   • Real-world diabetes + heart failure cases
+   • Treatment outcomes and best practices
+
+**Combined benefit:** Integrated protocols that address both conditions simultaneously rather than treating them separately.`,
             sender: 'system',
             timestamp: new Date()
           }
-          setMessages(prev => [...prev, specializedOptionsMessage])
+          setMessages(prev => [...prev, cardiologyOptionsMessage])
         }, 500)
       }, 1000)
-    } else if (specializedSpaces.some(s => s.isActive)) {
+    } else if (isCardiologyActive) {
       // Show comprehensive heart + diabetes response
-      const activeAll = [...personalSpaces, ...orgSpaces, ...specializedSpaces].filter(s => s.isActive)
+      const activeAll = [...personalSpaces, ...orgSpaces].filter(s => s.isActive)
       
       const comprehensiveResponse: ChatMessage = {
         id: `heart-comprehensive-${Date.now()}`,
-        content: `**Heart Failure Management in Diabetic Patients**
-*Integrating diabetes protocols with specialized cardiology guidelines*
+        content: `**🫀 Comprehensive Heart Failure Management in Diabetic Patients**
+*Integrating Diabetes Management + Cardiology Guidelines + Peer Case Studies*
 
-**Risk Assessment:**
-- Diabetic cardiomyopathy screening with echocardiogram
-- BNP/NT-proBNP levels (adjusted for diabetic kidney disease)
-- Assessment of coronary artery disease risk
+**🔬 Advanced Risk Stratification:**
+- **Diabetic cardiomyopathy assessment**: Echo with strain imaging, diastolic function evaluation
+- **Biomarkers**: NT-proBNP >125 pg/mL (adjust for eGFR), Troponin for acute events
+- **Coronary evaluation**: Stress testing or CTA if intermediate risk, consider FFR
+- **Nephro-cardiac axis**: eGFR, proteinuria, cystatin C for refined risk assessment
 
-**Integrated Management:**
-- **SGLT-2 inhibitors**: Empagliflozin 10mg daily (dual cardiac + glycemic benefits)
-- **ACE inhibitors**: Lisinopril 10mg daily, titrate to max tolerated dose
-- **Beta-blockers**: Metoprolol succinate 25mg BID (heart failure specific)
+**💊 Evidence-Based Integrated Pharmacotherapy:**
 
-**Diabetes-Specific Considerations:**
-- Avoid TZDs (increased fluid retention risk)
-- Monitor for hypoglycemia with heart failure medications
-- Adjust insulin doses during acute decompensation
+**Foundation Therapy (GDMT):**
+- **ACE-I/ARB**: Lisinopril 10mg daily → target 40mg daily (dual benefit: diabetic nephropathy + HFrEF)
+- **Beta-blocker**: Metoprolol succinate 25mg BID → target 200mg BID (carvedilol alternative if diabetes control issues)
+- **MRA**: Spironolactone 25mg daily (monitor K+ closely with diabetes)
 
-**Monitoring Protocol:**
-- Weekly weights during titration
-- Monthly eGFR and electrolytes
-- Quarterly HbA1c and echocardiogram
-- Semi-annual stress testing if stable
+**Diabetes-Optimized Add-ons:**
+- **SGLT-2 inhibitors**: Empagliflozin 10mg daily (HFrEF benefit independent of diabetes status)
+- **GLP-1 agonists**: Semaglutide 1mg weekly (if BMI >30, proven CV outcomes)
+- **Metformin**: Continue unless eGFR <30 or hemodynamic instability
 
-**Emergency Management:**
-- Acute decompensation: IV diuretics + glucose monitoring
-- Hypoglycemia risk increased with poor oral intake
-- Coordinate with endocrinology for insulin adjustments`,
+**Device/Advanced Therapy Considerations:**
+- **ICD**: Primary prevention if LVEF ≤35% despite 3 months optimal medical therapy
+- **CRT**: If QRS >150ms with LBBB morphology
+- **Heart transplant evaluation**: If refractory HF, but diabetes control must be optimized
+
+**🔄 Integrated Monitoring Protocol:**
+
+**Weekly (during uptitration):**
+- Weight, symptoms, blood pressure, heart rate
+- Basic metabolic panel (K+, Cr, eGFR)
+- Glucose logs review
+
+**Monthly (first 3 months):**
+- HbA1c, comprehensive metabolic panel
+- Echo if symptoms change
+- Medication adherence and side effect assessment
+
+**Quarterly (stable patients):**
+- HbA1c, lipid panel, microalbumin
+- Echo, 6-minute walk test
+- Ophthalmology and podiatry referrals
+
+**🚨 Emergency & Acute Management:**
+
+**Acute decompensated HF in diabetes:**
+- **Diuretics**: Furosemide IV (monitor for prerenal AKI)
+- **Glucose management**: Insulin sliding scale, avoid metformin during hospitalization
+- **Avoid**: Thiazolidinediones (fluid retention), NSAIDs
+- **Monitor**: Hourly I/O, daily weights, BID glucose checks
+
+**Hypoglycemia risk factors:**
+- Reduced oral intake during HF exacerbations
+- ACE-I may potentiate insulin sensitivity
+- Coordinate with endocrinology for insulin adjustments
+
+**🎯 Quality Outcomes & Patient Education:**
+- Target LVEF improvement >10% at 6 months
+- HbA1c <7% (or <8% if elderly/multiple comorbidities)
+- Patient education on: daily weights, medication compliance, dietary sodium restriction
+- Palliative care consultation if advanced HF with poor diabetes control`,
         sender: 'assistant',
         timestamp: new Date(),
         sources: activeAll.map(space => ({
           spaceId: space.id,
           spaceName: space.name,
-          relevance: space.type === 'specialized' ? 'high' as const : 'medium' as const
+          relevance: (space.id === 'mo3' || space.id === 'mo4') ? 'high' as const : 'medium' as const
         })),
         actions: [
-          { id: 'save-integrated', label: 'Save Integration Protocol', action: 'save_integrated_protocol', variant: 'primary' },
-          { id: 'consult-cardiology', label: 'Request Cardiology Consult', action: 'request_consult', variant: 'secondary' }
+          { id: 'save-integrated', label: 'Save Integrated Protocol', action: 'save_integrated_protocol', variant: 'primary' },
+          { id: 'generate-care-plan', label: 'Generate Care Plan', action: 'generate_care_plan', variant: 'secondary' },
+          { id: 'consult-cardiology', label: 'Request Live Consult', action: 'request_consult', variant: 'ghost' }
         ]
       }
       setMessages(prev => [...prev, comprehensiveResponse])
@@ -272,7 +433,6 @@ However, I didn't find comprehensive, evidence-based clinical protocols for diab
     if (action === 'show_active') {
       const activePersonal = personalSpaces.filter(s => s.isActive)
       const activeOrg = orgSpaces.filter(s => s.isActive)
-      const activeSpecialized = specializedSpaces.filter(s => s.isActive)
       
       let content = `**Active Knowledge Spaces:**
 
@@ -281,13 +441,6 @@ ${activePersonal.map(s => `• ${s.name} (${s.documentCount} documents)`).join('
 
 **Organization (${activeOrg.length} active):**
 ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} documents)`).join('\n') : 'None currently active'}`
-
-      if (activeSpecialized.length > 0) {
-        content += `
-
-**Specialized (${activeSpecialized.length} active):**
-${activeSpecialized.map(s => `${s.icon} ${s.name} (${s.documentCount} documents)`).join('\n')}`
-      }
 
       const statusMessage: ChatMessage = {
         id: `status-${Date.now()}`,
@@ -300,6 +453,8 @@ ${activeSpecialized.map(s => `${s.icon} ${s.name} (${s.documentCount} documents)
       handleSendMessage('What are the current diabetes management protocols?')
     } else if (action === 'search_heart_diabetes') {
       handleSendMessage('What are the current guidelines for managing heart failure in diabetic patients?')
+    } else if (action === 'ask_heart_followup') {
+      handleSendMessage('How do we manage heart failure in diabetic patients?')
     }
   }
 
@@ -313,19 +468,97 @@ ${activeSpecialized.map(s => `${s.icon} ${s.name} (${s.documentCount} documents)
           handleDiabetesWorkflow('')
         }
       }, 500)
-    } else if (action === 'include_specialized_spaces') {
-      const allSpecializedIds = specializedSpaces.map(s => s.id)
-      activateSpecializedSpaces(allSpecializedIds)
-      
-      setTimeout(() => {
-        if (currentScenario?.workflowType === 'multi-domain') {
-          handleMultiDomainWorkflow('heart failure diabetic patients')
+    } else if (action === 'include_cardiology_spaces') {
+      // Activate cardiology spaces and show comprehensive response when done
+      activateOrgSpaces(['mo3', 'mo4'], () => {
+        // Get the current active spaces (state should be updated now)
+        const currentOrgSpaces = orgSpaces.map(s => 
+          (s.id === 'mo3' || s.id === 'mo4') ? { ...s, isActive: true } : s
+        )
+        const activeAll = [...personalSpaces, ...currentOrgSpaces].filter(s => s.isActive)
+        
+        const comprehensiveResponse: ChatMessage = {
+          id: `heart-comprehensive-${Date.now()}`,
+          content: `**🫀 Comprehensive Heart Failure Management in Diabetic Patients**
+*Integrating Diabetes Management + Cardiology Guidelines + Peer Case Studies*
+
+**🔬 Advanced Risk Stratification:**
+- **Diabetic cardiomyopathy assessment**: Echo with strain imaging, diastolic function evaluation
+- **Biomarkers**: NT-proBNP >125 pg/mL (adjust for eGFR), Troponin for acute events
+- **Coronary evaluation**: Stress testing or CTA if intermediate risk, consider FFR
+- **Nephro-cardiac axis**: eGFR, proteinuria, cystatin C for refined risk assessment
+
+**💊 Evidence-Based Integrated Pharmacotherapy:**
+
+**Foundation Therapy (GDMT):**
+- **ACE-I/ARB**: Lisinopril 10mg daily → target 40mg daily (dual benefit: diabetic nephropathy + HFrEF)
+- **Beta-blocker**: Metoprolol succinate 25mg BID → target 200mg BID (carvedilol alternative if diabetes control issues)
+- **MRA**: Spironolactone 25mg daily (monitor K+ closely with diabetes)
+
+**Diabetes-Optimized Add-ons:**
+- **SGLT-2 inhibitors**: Empagliflozin 10mg daily (HFrEF benefit independent of diabetes status)
+- **GLP-1 agonists**: Semaglutide 1mg weekly (if BMI >30, proven CV outcomes)
+- **Metformin**: Continue unless eGFR <30 or hemodynamic instability
+
+**Device/Advanced Therapy Considerations:**
+- **ICD**: Primary prevention if LVEF ≤35% despite 3 months optimal medical therapy
+- **CRT**: If QRS >150ms with LBBB morphology
+- **Heart transplant evaluation**: If refractory HF, but diabetes control must be optimized
+
+**🔄 Integrated Monitoring Protocol:**
+
+**Weekly (during uptitration):**
+- Weight, symptoms, blood pressure, heart rate
+- Basic metabolic panel (K+, Cr, eGFR)
+- Glucose logs review
+
+**Monthly (first 3 months):**
+- HbA1c, comprehensive metabolic panel
+- Echo if symptoms change
+- Medication adherence and side effect assessment
+
+**Quarterly (stable patients):**
+- HbA1c, lipid panel, microalbumin
+- Echo, 6-minute walk test
+- Ophthalmology and podiatry referrals
+
+**🚨 Emergency & Acute Management:**
+
+**Acute decompensated HF in diabetes:**
+- **Diuretics**: Furosemide IV (monitor for prerenal AKI)
+- **Glucose management**: Insulin sliding scale, avoid metformin during hospitalization
+- **Avoid**: Thiazolidinediones (fluid retention), NSAIDs
+- **Monitor**: Hourly I/O, daily weights, BID glucose checks
+
+**Hypoglycemia risk factors:**
+- Reduced oral intake during HF exacerbations
+- ACE-I may potentiate insulin sensitivity
+- Coordinate with endocrinology for insulin adjustments
+
+**🎯 Quality Outcomes & Patient Education:**
+- Target LVEF improvement >10% at 6 months
+- HbA1c <7% (or <8% if elderly/multiple comorbidities)
+- Patient education on: daily weights, medication compliance, dietary sodium restriction
+- Palliative care consultation if advanced HF with poor diabetes control`,
+          sender: 'assistant',
+          timestamp: new Date(),
+          sources: activeAll.map(space => ({
+            spaceId: space.id,
+            spaceName: space.name,
+            relevance: (space.id === 'mo3' || space.id === 'mo4') ? 'high' as const : 'medium' as const
+          })),
+          actions: [
+            { id: 'save-integrated', label: 'Save Integrated Protocol', action: 'save_integrated_protocol', variant: 'primary' },
+            { id: 'generate-care-plan', label: 'Generate Care Plan', action: 'generate_care_plan', variant: 'secondary' },
+            { id: 'consult-cardiology', label: 'Request Live Consult', action: 'request_consult', variant: 'ghost' }
+          ]
         }
-      }, 500)
+        setMessages(prev => [...prev, comprehensiveResponse])
+      })
     } else if (action === 'select_cardiology') {
-      activateSpecializedSpaces(['ms1'])
+      activateOrgSpaces(['mo3'])
     } else if (action === 'select_peer') {
-      activateSpecializedSpaces(['ms2'])
+      activateOrgSpaces(['mo4'])
     }
   }
 
@@ -341,7 +574,6 @@ ${activeSpecialized.map(s => `${s.icon} ${s.name} (${s.documentCount} documents)
     setCurrentScenario(null)
     setPersonalSpaces([])
     setOrgSpaces([])
-    setSpecializedSpaces([])
     setMessages([])
     setInputValue('')
   }
@@ -432,45 +664,13 @@ ${activeSpecialized.map(s => `${s.icon} ${s.name} (${s.documentCount} documents)
             </div>
           )}
 
-          {/* Specialized Section */}
-          {specializedSpaces.some(space => space.isActive) && (
-            <div>
-              <div className="flex items-center mb-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                  <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <h2 className="text-sm font-medium text-gray-900">Specialized</h2>
-              </div>
-              <div className="space-y-2">
-                {specializedSpaces.filter(space => space.isActive).map(space => (
-                  <div key={space.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center">
-                          <span className="text-sm mr-2">{space.icon}</span>
-                          <h3 className="text-sm font-medium text-gray-900">{space.name}</h3>
-                        </div>
-                        <span className="text-xs text-gray-500">{space.documentCount}</span>
-                      </div>
-                      <p className="text-xs text-gray-600">{space.description}</p>
-                    </div>
-                    <div className="ml-3 w-8 h-4 rounded-full flex items-center bg-purple-600">
-                      <div className="w-3 h-3 rounded-full bg-white translate-x-4" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Chat Interface */}
       <div className="flex-1 flex flex-col">
         <div className="p-6 border-b border-gray-200 bg-white">
-          <h2 className="text-xl font-semibold text-gray-900">Healthcare Assistant</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Healthcare Assistant v2</h2>
           <p className="text-sm text-gray-600">{currentScenario.description}</p>
         </div>
         

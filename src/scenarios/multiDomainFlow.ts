@@ -37,30 +37,29 @@ const multiDomainOrgSpaces: KnowledgeSpace[] = [
     isActive: false,
     documentCount: 156,
     description: 'Hospital emergency procedures'
-  }
-];
-
-// Specialized Knowledge Spaces (hidden initially)
-const multiDomainSpecializedSpaces: KnowledgeSpace[] = [
+  },
   {
-    id: 'ms1',
+    id: 'mo3',
     name: 'Cardiology Guidelines',
-    type: 'specialized',
+    type: 'organization',
     isActive: false,
     documentCount: 124,
     description: 'Organization-wide cardiology protocols',
     icon: '🫀'
   },
   {
-    id: 'ms2',
+    id: 'mo4',
     name: 'Peer Curated Heart Studies',
-    type: 'specialized',
+    type: 'organization',
     isActive: false,
     documentCount: 67,
     description: 'Co-doctor network curated case studies',
     icon: '👥'
   }
 ];
+
+// Specialized Knowledge Spaces (hidden initially)
+const multiDomainSpecializedSpaces: KnowledgeSpace[] = [];
 
 // Initial messages for Multi-Domain scenario
 const multiDomainInitialMessages: ChatMessage[] = [

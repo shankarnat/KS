@@ -15,7 +15,7 @@ const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({ onSelectScenario })
       <div className="max-w-4xl mx-auto p-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Knowledge Spaces Healthcare Assistant
+            Knowledge Spaces Healthcare Assistant v2
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Choose your consultation scenario to get started with specialized workflows and knowledge resources
