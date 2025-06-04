@@ -20,6 +20,11 @@ export interface ChatMessage {
   sources?: SourceReference[];
   quickReplies?: QuickReply[];
   actions?: MessageAction[];
+  systemSuggestion?: boolean;
+  metadata?: {
+    sources?: string[];
+    confidence?: number;
+  };
 }
 
 export interface SourceReference {

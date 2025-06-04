@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Info, FileText, ChevronRight } from 'lucide-react';
-import type { ChatMessage as ChatMessageType, QuickReply } from '../types';
-import ChatMessage from './ChatMessage';
+import type { ChatMessage as ChatMessageType } from '../types';
 
 interface ChatInterfaceProps {
   messages: ChatMessageType[];
@@ -50,7 +49,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     return (
       <div className={`${message.sender === 'assistant' ? 'bg-gray-50' : 'bg-white'} rounded-lg p-4`}>
-        <ChatMessage message={message} />
+        <div className="whitespace-pre-wrap">{message.content}</div>
         
         {/* System Suggestion Indicator */}
         {systemSuggestion && (
