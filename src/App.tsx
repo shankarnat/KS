@@ -16,14 +16,14 @@ function App() {
     setMessages(scenario.initialMessages)
   }
 
-  const activateOrgSpaces = (spaceIds: string[], callback?: () => void) => {
+  const activateOrgSpaces = (spaceIds: string[], callback?: (updatedSpaces: KnowledgeSpace[]) => void) => {
     setOrgSpaces(spaces => {
       const updatedSpaces = spaces.map(space =>
         spaceIds.includes(space.id) ? { ...space, isActive: true } : space
       )
-      // Call callback after state update
+      // Call callback after state update with updated spaces
       if (callback) {
-        setTimeout(callback, 100)
+        setTimeout(() => callback(updatedSpaces), 100)
       }
       return updatedSpaces
     })
@@ -461,21 +461,79 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
   const handleAction = (action: string) => {
     if (action === 'include_all_org') {
       const allOrgIds = orgSpaces.map(s => s.id)
-      activateOrgSpaces(allOrgIds)
-      
-      setTimeout(() => {
+      activateOrgSpaces(allOrgIds, (updatedSpaces) => {
         if (currentScenario?.workflowType === 'diabetes') {
-          handleDiabetesWorkflow('')
+          // Show comprehensive diabetes protocol directly
+          // Use the updated spaces passed from callback
+          const activeOrg = updatedSpaces.filter(s => s.isActive)
+          const comprehensiveResponse: ChatMessage = {
+            id: `comprehensive-${Date.now()}`,
+            content: `**Comprehensive Type 2 Diabetes Management Protocol**
+*Based on ${activeOrg.map(s => s.name).join(', ')} - Organization Standards*
+
+**🔍 Initial Assessment & Risk Stratification:**
+- HbA1c >7% indicates need for intensified management
+- Comprehensive diabetic complications screening:
+  - **Retinopathy**: Annual dilated eye exam with ophthalmology
+  - **Nephropathy**: Annual microalbumin, eGFR monitoring
+  - **Neuropathy**: Annual foot exam with 10g monofilament test
+- **Cardiovascular risk assessment**: Calculate 10-year ASCVD risk score
+- **Mental health screening**: PHQ-2 for depression (common in T2DM)
+
+**💊 Evidence-Based Treatment Ladder:**
+
+**Step 1 - First-Line (0-3 months):**
+- **Metformin** 500mg BID → titrate to 1000mg BID (max 2000mg/day)
+- Target HbA1c <7% for most adults (<8% if elderly/comorbid)
+- Monitor eGFR baseline and q6 months (contraindicated if <30 mL/min/1.73m²)
+- **Lifestyle**: Medical nutrition therapy + 150min/week moderate exercise
+
+**Step 2 - Combination Therapy (if HbA1c >7% after 3 months):**
+- **Preferred add-on** (based on patient profile):
+  - **SGLT-2 inhibitors** (Empagliflozin 10mg daily): Renal + cardiac protection
+  - **GLP-1 agonists** (Semaglutide 0.25mg weekly): Weight loss + CV benefits
+  - **DPP-4 inhibitors** (Sitagliptin 100mg daily): Weight neutral, low hypoglycemia risk
+
+**Step 3 - Intensification:**
+- **Basal insulin** (Glargine) starting 10 units at bedtime OR 0.2 units/kg
+- Titrate by 2-4 units every 3 days based on fasting glucose target 80-130mg/dL
+
+**📊 Monitoring & Follow-up:**
+- **HbA1c**: Every 3 months until target achieved, then every 6 months
+- **Blood pressure**: Target <140/90 (or <130/80 if high CV risk)
+- **Lipids**: Statin therapy if LDL >70mg/dL or high CV risk
+- **Weight management**: Document BMI and waist circumference quarterly
+
+**🚨 Emergency Management:**
+- **Severe hypoglycemia**: Glucagon 1mg IM/SC if unconscious
+- **DKA warning signs**: pH <7.3, glucose >250mg/dL, ketones positive
+- **Sick day management**: Continue metformin, increase glucose monitoring
+
+**🎯 Quality Measures:**
+- Annual comprehensive foot exam and patient education
+- Annual influenza vaccination (increased infection risk)
+- Pneumococcal vaccination if ≥65 years or high-risk comorbidities`,
+            sender: 'assistant',
+            timestamp: new Date(),
+            sources: activeOrg.map(space => ({
+              spaceId: space.id,
+              spaceName: space.name,
+              relevance: 'high' as const
+            })),
+            actions: [
+              { id: 'save-protocol', label: 'Save to My Notes', action: 'save_to_notes', variant: 'primary' },
+              { id: 'view-complications', label: 'View Complications Management', action: 'view_complications', variant: 'secondary' },
+              { id: 'ask-followup', label: 'Ask Follow-up Question', action: 'ask_followup', variant: 'ghost' }
+            ]
+          }
+          setMessages(prev => [...prev, comprehensiveResponse])
         }
-      }, 500)
+      })
     } else if (action === 'include_cardiology_spaces') {
       // Activate cardiology spaces and show comprehensive response when done
-      activateOrgSpaces(['mo3', 'mo4'], () => {
-        // Get the current active spaces (state should be updated now)
-        const currentOrgSpaces = orgSpaces.map(s => 
-          (s.id === 'mo3' || s.id === 'mo4') ? { ...s, isActive: true } : s
-        )
-        const activeAll = [...personalSpaces, ...currentOrgSpaces].filter(s => s.isActive)
+      activateOrgSpaces(['mo3', 'mo4'], (updatedSpaces) => {
+        // Use the updated spaces passed from callback
+        const activeAll = [...personalSpaces, ...updatedSpaces].filter(s => s.isActive)
         
         const comprehensiveResponse: ChatMessage = {
           id: `heart-comprehensive-${Date.now()}`,
