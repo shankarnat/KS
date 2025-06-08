@@ -1,13 +1,12 @@
-# Use Node.js 18 Alpine as base image
+# Build stage
 FROM node:18-alpine as build
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies for build)
+# Install dependencies
 RUN npm ci
 
 # Copy source code
@@ -17,16 +16,15 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM node:18-alpine
 
-# Copy built application to nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+# Install serve to host static files
+RUN npm install -g serve
 
-# Expose port 80
-EXPOSE 80
+# Copy built files
+COPY --from=build /app/dist ./dist
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Heroku assigns the port dynamically
+CMD serve -s dist -l ${PORT:-3000}
