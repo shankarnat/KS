@@ -26,5 +26,9 @@ RUN npm install -g serve
 # Copy built files
 COPY --from=build /app/dist ./dist
 
+ENV PORT 5000
+
+EXPOSE 5000
+
 # Heroku assigns the port dynamically
-CMD serve -s dist -l ${PORT:-3000}
+CMD serve -s dist -l $PORT
