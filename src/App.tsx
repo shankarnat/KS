@@ -8,6 +8,8 @@ function App() {
   const [orgSpaces, setOrgSpaces] = useState<KnowledgeSpace[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
+  const [isPersonalExpanded, setIsPersonalExpanded] = useState(true)
+  const [isOrgExpanded, setIsOrgExpanded] = useState(true)
 
   const handleScenarioSelect = (scenario: Scenario) => {
     setCurrentScenario(scenario)
@@ -662,49 +664,29 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {/* Personal Section */}
           <div>
-            <div className="flex items-center mb-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <h2 className="text-sm font-medium text-gray-900">Personal</h2>
-            </div>
-            <div className="space-y-2">
-              {personalSpaces.map(space => (
-                <div key={space.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-sm font-medium text-gray-900">{space.name}</h3>
-                      <span className="text-xs text-gray-500">{space.documentCount}</span>
-                    </div>
-                    <p className="text-xs text-gray-600">{space.description}</p>
-                  </div>
-                  <div className={`ml-3 w-8 h-4 rounded-full flex items-center ${
-                    space.isActive ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}>
-                    <div className={`w-3 h-3 rounded-full bg-white transition-transform ${
-                      space.isActive ? 'translate-x-4' : 'translate-x-0.5'
-                    }`} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Organization Section */}
-          {orgSpaces.some(space => space.isActive) && (
-            <div>
-              <div className="flex items-center mb-3">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                  <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4z" clipRule="evenodd" />
+            <button 
+              onClick={() => setIsPersonalExpanded(!isPersonalExpanded)}
+              className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 rounded-lg p-2 -m-2"
+            >
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <h2 className="text-sm font-medium text-gray-900">Organization</h2>
+                <h2 className="text-sm font-medium text-gray-900">My Space</h2>
               </div>
+              <svg 
+                className={`w-4 h-4 text-gray-500 transition-transform ${isPersonalExpanded ? 'rotate-180' : ''}`}
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+              >
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            {isPersonalExpanded && (
               <div className="space-y-2">
-                {orgSpaces.filter(space => space.isActive).map(space => (
+                {personalSpaces.map(space => (
                   <div key={space.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
@@ -713,12 +695,60 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
                       </div>
                       <p className="text-xs text-gray-600">{space.description}</p>
                     </div>
-                    <div className="ml-3 w-8 h-4 rounded-full flex items-center bg-green-600">
-                      <div className="w-3 h-3 rounded-full bg-white translate-x-4" />
+                    <div className={`ml-3 w-8 h-4 rounded-full flex items-center ${
+                      space.isActive ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}>
+                      <div className={`w-3 h-3 rounded-full bg-white transition-transform ${
+                        space.isActive ? 'translate-x-4' : 'translate-x-0.5'
+                      }`} />
                     </div>
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Organization Section */}
+          {orgSpaces.some(space => space.isActive) && (
+            <div>
+              <button 
+                onClick={() => setIsOrgExpanded(!isOrgExpanded)}
+                className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 rounded-lg p-2 -m-2"
+              >
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <h2 className="text-sm font-medium text-gray-900">Company Spaces</h2>
+                </div>
+                <svg 
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isOrgExpanded ? 'rotate-180' : ''}`}
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+              {isOrgExpanded && (
+                <div className="space-y-2">
+                  {orgSpaces.filter(space => space.isActive).map(space => (
+                    <div key={space.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-sm font-medium text-gray-900">{space.name}</h3>
+                          <span className="text-xs text-gray-500">{space.documentCount}</span>
+                        </div>
+                        <p className="text-xs text-gray-600">{space.description}</p>
+                      </div>
+                      <div className="ml-3 w-8 h-4 rounded-full flex items-center bg-green-600">
+                        <div className="w-3 h-3 rounded-full bg-white translate-x-4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

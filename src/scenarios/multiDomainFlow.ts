@@ -24,7 +24,7 @@ const multiDomainPersonalSpaces: KnowledgeSpace[] = [
 const multiDomainOrgSpaces: KnowledgeSpace[] = [
   {
     id: 'mo1',
-    name: 'Diabetes Management Protocols',
+    name: 'Diabetes Guidelines',
     type: 'organization',
     isActive: true, // Already active from previous consultation
     documentCount: 89,
