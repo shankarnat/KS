@@ -46,11 +46,15 @@ const multiDomainOrgSpaces: KnowledgeSpace[] = [
     documentCount: 124,
     description: 'Organization-wide cardiology protocols',
     icon: '🫀'
-  },
+  }
+];
+
+// Shared Knowledge Spaces for Multi-Domain Scenario
+const multiDomainSharedSpaces: KnowledgeSpace[] = [
   {
     id: 'mo4',
     name: 'Peer Curated Heart Studies',
-    type: 'organization',
+    type: 'shared',
     isActive: false,
     documentCount: 67,
     description: 'Co-doctor network curated case studies',
@@ -83,6 +87,7 @@ export const multiDomainScenario: Scenario = {
   icon: '🫀',
   initialPersonalSpaces: multiDomainPersonalSpaces,
   initialOrgSpaces: multiDomainOrgSpaces,
+  initialSharedSpaces: multiDomainSharedSpaces,
   specializedSpaces: multiDomainSpecializedSpaces,
   initialMessages: multiDomainInitialMessages,
   workflowType: 'multi-domain'

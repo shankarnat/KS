@@ -78,6 +78,7 @@ export const diabetesScenario: Scenario = {
   icon: '🩺',
   initialPersonalSpaces: diabetesPersonalSpaces,
   initialOrgSpaces: diabetesOrgSpaces,
+  initialSharedSpaces: [],
   initialMessages: diabetesInitialMessages,
   workflowType: 'diabetes'
 };

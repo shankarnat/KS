@@ -2,7 +2,7 @@
 export interface KnowledgeSpace {
   id: string;
   name: string;
-  type: 'personal' | 'organization' | 'specialized';
+  type: 'personal' | 'organization' | 'specialized' | 'shared';
   isActive: boolean;
   documentCount: number;
   description?: string;
@@ -55,7 +55,7 @@ export interface SearchResult {
   snippet: string;
   spaceId: string;
   spaceName: string;
-  spaceType: 'personal' | 'organization' | 'specialized';
+  spaceType: 'personal' | 'organization' | 'specialized' | 'shared';
   documentPath: string;
   matchScore: number;
   lastModified: Date;
@@ -70,6 +70,7 @@ export interface Scenario {
   icon: string;
   initialPersonalSpaces: KnowledgeSpace[];
   initialOrgSpaces: KnowledgeSpace[];
+  initialSharedSpaces?: KnowledgeSpace[];
   specializedSpaces?: KnowledgeSpace[];
   initialMessages: ChatMessage[];
   workflowType: 'diabetes' | 'multi-domain';
