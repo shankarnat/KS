@@ -515,17 +515,92 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
       content: `✅ Activated: Cardiology Care Coordination Notes (87 docs)
 ✅ Activated: Cardiology Lifestyle Playbook (96 docs)
 
-**Integrated Care Coordination for Cardiac-Diabetic Patients:**
+## 📋 Integrated Care Plan: Mrs. Johnson (67y/o, F)
 
-Your cardiac resources are now active. You can now create comprehensive care plans that address:
+### Current Status (Based on Lab Records & Call Transcripts):
+- **HbA1c**: 8.2% (↑ from 7.8% three months ago)
+- **BP**: 145/92 mmHg (on Lisinopril 20mg)
+- **LVEF**: 42% (mild HFrEF)
+- **BNP**: 285 pg/mL
+- **eGFR**: 58 mL/min/1.73m²
+- **Weight**: 186 lbs (↑ 8 lbs in 2 weeks per call transcript)
+- **Patient reported**: "Swelling in ankles" and "more tired than usual"
 
-• **Coordinated Nutrition Plans**: Heart-healthy diets that manage blood glucose
-• **Exercise Protocols**: Safe cardiac rehabilitation with diabetes considerations  
-• **Medication Timing**: Coordinate cardiac meds with insulin/glucose management
-• **Multi-disciplinary Communication**: Templates for care team collaboration
-• **Patient Education Materials**: Integrated lifestyle modification resources
+### 🍽️ Personalized Nutrition Plan:
+**Daily Targets:**
+- Sodium: <1,500mg (strict cardiac restriction)
+- Carbohydrates: 45-60g per meal (diabetes control)
+- Fluid: 1.5-2L daily (HF management)
 
-These resources enable holistic patient care by addressing both conditions simultaneously through evidence-based lifestyle interventions.`,
+**Meal Schedule:**
+- **Breakfast (7 AM)**: Steel-cut oatmeal (30g carbs) with berries, ground flaxseed
+- **Mid-morning (10 AM)**: Greek yogurt (15g carbs), 6 almonds
+- **Lunch (12:30 PM)**: Grilled salmon, quinoa (30g carbs), steamed vegetables
+- **Afternoon (3:30 PM)**: Apple slices (15g carbs) with 1 tbsp almond butter
+- **Dinner (6 PM)**: Herb-roasted chicken, cauliflower rice, mixed greens
+- **Evening (8 PM)**: If BG <100: small portion berries (10g carbs)
+
+### 💊 Coordinated Medication Schedule:
+**Morning (7 AM):**
+- Metformin 1000mg (with breakfast)
+- Lisinopril 20mg
+- Carvedilol 12.5mg
+- Furosemide 40mg
+
+**Evening (6 PM):**
+- Metformin 1000mg (with dinner)
+- Carvedilol 12.5mg
+- Empagliflozin 10mg
+
+**Bedtime (10 PM):**
+- Glargine insulin 18 units (adjust per sliding scale)
+
+### 🏃‍♀️ Safe Exercise Protocol:
+**Week 1-2 (Building tolerance):**
+- 10-minute walks after meals (glucose control)
+- Chair exercises 2x daily
+- Monitor HR: Keep <110 bpm
+
+**Week 3-4 (Progression):**
+- 15-minute walks, flat surface only
+- Light resistance bands (upper body)
+- Breathing exercises for HF
+
+**Red flags to stop exercise:**
+- Chest discomfort
+- Excessive shortness of breath
+- Dizziness
+- BG <70 or >250 mg/dL
+
+### 📊 Daily Monitoring Requirements:
+**Morning:**
+- Weight (same time, after voiding)
+- Blood glucose (fasting)
+- Blood pressure & pulse
+- Check ankles for swelling
+
+**Throughout day:**
+- BG before meals and bedtime
+- Fluid intake tracking
+- Symptom diary
+
+**Weekly targets:**
+- Weight gain <2 lbs/week
+- Average BG: 80-130 mg/dL fasting, <180 mg/dL post-meal
+- BP: <130/80 mmHg
+
+### 🚨 When to Call Care Team:
+- Weight gain >3 lbs in 2 days
+- Increased swelling despite medication
+- BG consistently >200 or <70
+- New/worsening shortness of breath
+- Chest pain or pressure
+
+### 📱 Next Steps:
+- Video visit with dietitian: Thursday 2 PM
+- Lab recheck: 2 weeks (BMP, BNP)
+- Cardiology follow-up: 4 weeks
+- Consider cardiac rehab referral after optimization`,
       sender: 'assistant',
       timestamp: new Date(),
       quickReplies: [
