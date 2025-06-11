@@ -335,7 +335,7 @@ I found specialized cardiology resources in our organization that can fill these
           sender: 'assistant',
           timestamp: new Date(),
           actions: [
-            { id: 'include-cardiology', label: 'Include Both Cardiology Resources', action: 'include_cardiology_spaces', variant: 'primary' },
+            { id: 'include-cardiology', label: 'Include Both Cardiology Resources', action: 'add_cardiac_resources', variant: 'primary' },
             { id: 'select-cardiology', label: 'Guidelines Only', action: 'select_cardiology', variant: 'secondary' },
             { id: 'select-peer', label: 'Case Studies Only', action: 'select_peer', variant: 'secondary' }
           ]
@@ -477,6 +477,47 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
     }
   }
 
+  const handleAddCardiacSpaces = () => {
+    // Add to shared spaces
+    const newSharedSpace: KnowledgeSpace = {
+      id: 'ms3',
+      name: 'Cardiology Care Coordination Notes',
+      type: 'shared',
+      isActive: true,
+      documentCount: 87,
+      description: 'Peer-curated cardiac care coordination strategies',
+      icon: '🫀'
+    }
+
+    // Add to organization spaces
+    const newOrgSpace: KnowledgeSpace = {
+      id: 'mo5',
+      name: 'Cardiology Lifestyle Playbook',
+      type: 'organization',
+      isActive: true,
+      documentCount: 96,
+      description: 'Comprehensive lifestyle guidelines for cardiac patients',
+      icon: '❤️'
+    }
+
+    // Update state
+    setSharedSpaces(prev => [...prev, newSharedSpace])
+    setOrgSpaces(prev => [...prev, newOrgSpace])
+
+    // Add confirmation message
+    const confirmationMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      content: '✅ Activated: Cardiology Care Coordination Notes (87 docs) - Peer-curated cardiac care coordination strategies\n✅ Activated: Cardiology Lifestyle Playbook (96 docs) - Comprehensive lifestyle guidelines for cardiac patients\n\nYour cardiac resources are now active. These include both peer-reviewed care coordination strategies and evidence-based lifestyle modifications for patients with heart conditions.',
+      sender: 'assistant',
+      timestamp: new Date(),
+      quickReplies: [
+        { id: 'q1', text: 'View cardiac diet plans', action: 'view_cardiac_diet' },
+        { id: 'q2', text: 'Show exercise restrictions', action: 'show_cardiac_exercise' }
+      ]
+    }
+    setMessages(prev => [...prev, confirmationMessage])
+  }
+
   const handleAction = (action: string) => {
     if (action === 'include_all_org') {
       const allOrgIds = orgSpaces.map(s => s.id)
@@ -548,6 +589,8 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
           setMessages(prev => [...prev, comprehensiveResponse])
         }
       })
+    } else if (action === 'add_cardiac_resources') {
+      handleAddCardiacSpaces()
     } else if (action === 'include_cardiology_spaces') {
       // Activate cardiology spaces and show comprehensive response when done
       activateOrgSpaces(['mo3'], (updatedOrgSpaces) => {

@@ -4,7 +4,7 @@ import type { Scenario, KnowledgeSpace, ChatMessage } from '../types';
 const multiDomainPersonalSpaces: KnowledgeSpace[] = [
   {
     id: 'mp1',
-    name: 'Patient Lifestyle Assessments',
+    name: 'Patient Lab Records',
     type: 'personal',
     isActive: true,
     documentCount: 42,
@@ -12,7 +12,7 @@ const multiDomainPersonalSpaces: KnowledgeSpace[] = [
   },
   {
     id: 'mp2',
-    name: 'Care Coordination Notes',
+    name: 'Patient Call Transcripts',
     type: 'personal',
     isActive: true,
     documentCount: 38,
