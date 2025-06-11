@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Info, FileText, ChevronRight, CheckCircle, Database, BookOpen, Activity, Bell } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { ChatMessage as ChatMessageType } from '../types';
 
 interface ChatInterfaceProps {
@@ -134,7 +136,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
         <div className="flex items-start">
           <Info className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
-          <div className="whitespace-pre-wrap text-gray-700">{content}</div>
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h2: ({children}) => <h2 className="text-lg font-semibold mt-3 mb-2 text-gray-900">{children}</h2>,
+                h3: ({children}) => <h3 className="text-base font-semibold mt-2 mb-1 text-gray-800">{children}</h3>,
+                strong: ({children}) => <strong className="font-semibold text-gray-800">{children}</strong>,
+                ul: ({children}) => <ul className="list-disc ml-5 my-2 space-y-1">{children}</ul>,
+                li: ({children}) => <li className="text-gray-600">{children}</li>,
+                p: ({children}) => <p className="my-2 text-gray-700">{children}</p>,
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
         </div>
       </div>
     );
@@ -150,7 +166,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <SystemMessage content={message.content} />
         ) : (
           <div className={`${message.sender === 'assistant' ? 'bg-gray-50 rounded-lg p-4' : ''}`}>
-            <div className="whitespace-pre-wrap">{message.content}</div>
+            <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-strong:text-gray-900 prose-ul:list-disc prose-ul:ml-4 prose-li:text-gray-700 prose-p:text-gray-700 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  // Custom components for better rendering
+                  h1: ({children}) => <h1 className="text-xl font-bold mt-4 mb-2">{children}</h1>,
+                  h2: ({children}) => <h2 className="text-lg font-semibold mt-3 mb-2">{children}</h2>,
+                  h3: ({children}) => <h3 className="text-base font-semibold mt-2 mb-1">{children}</h3>,
+                  strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                  ul: ({children}) => <ul className="list-disc ml-5 my-2 space-y-1">{children}</ul>,
+                  ol: ({children}) => <ol className="list-decimal ml-5 my-2 space-y-1">{children}</ol>,
+                  li: ({children}) => <li className="text-gray-700">{children}</li>,
+                  p: ({children}) => <p className="my-2 text-gray-700">{children}</p>,
+                  code: ({children, ...props}) => {
+                    const isInline = !('className' in props && props.className?.includes('language-'));
+                    return isInline ? (
+                      <code className="bg-gray-100 text-blue-600 px-1 py-0.5 rounded text-sm font-mono">{children}</code>
+                    ) : (
+                      <pre className="bg-gray-100 p-3 rounded-lg overflow-x-auto my-2">
+                        <code className="text-sm font-mono">{children}</code>
+                      </pre>
+                    );
+                  },
+                }}
+              >
+                {message.content}
+              </ReactMarkdown>
+            </div>
             
             {/* System Suggestion Indicator */}
             {systemSuggestion && (

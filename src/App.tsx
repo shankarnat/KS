@@ -12,6 +12,9 @@ function App() {
   const [isPersonalExpanded, setIsPersonalExpanded] = useState(true)
   const [isOrgExpanded, setIsOrgExpanded] = useState(true)
   const [isSharedExpanded, setIsSharedExpanded] = useState(true)
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const [articleContent, setArticleContent] = useState('')
+  const [articleTitle, setArticleTitle] = useState('')
 
   const handleScenarioSelect = (scenario: Scenario) => {
     setCurrentScenario(scenario)
@@ -345,19 +348,21 @@ I found specialized cardiology resources in our organization that can fill these
         setTimeout(() => {
           const cardiologyOptionsMessage: ChatMessage = {
             id: `cardiology-options-${Date.now()}`,
-            content: `**Available Cardiology Resources:**
+            content: `**Available Cardiac Care Resources:**
 
-🫀 **Cardiology Guidelines** (Organization-wide)
-   • 124 protocols including diabetic cardiomyopathy management
-   • Heart failure staging, medication protocols, device considerations
-   • Risk stratification and monitoring guidelines
+❤️ **Cardiology Lifestyle Playbook** (Organization Resource)
+   • 96 comprehensive lifestyle guidelines for cardiac patients
+   • Heart-healthy nutrition plans and dietary restrictions
+   • Safe exercise protocols for various cardiac conditions
+   • Stress management and behavioral modifications
 
-👥 **Peer Curated Heart Studies** (Co-doctor network) 
-   • 67 case studies from practicing cardiologists
-   • Real-world diabetes + heart failure cases
-   • Treatment outcomes and best practices
+🫀 **Cardiology Care Coordination Notes** (Peer Network)
+   • 87 peer-curated care coordination strategies
+   • Successful patient engagement techniques
+   • Multi-disciplinary team approaches
+   • Cultural adaptations for diverse populations
 
-**Combined benefit:** Integrated protocols that address both conditions simultaneously rather than treating them separately.`,
+**Combined benefit:** Holistic lifestyle management that addresses both cardiac health and diabetes through coordinated care strategies.`,
             sender: 'system',
             timestamp: new Date()
           }
@@ -453,7 +458,7 @@ I found specialized cardiology resources in our organization that can fill these
       const activePersonal = personalSpaces.filter(s => s.isActive)
       const activeOrg = orgSpaces.filter(s => s.isActive)
       
-      let content = `**Active Knowledge Spaces:**
+      const content = `**Active Knowledge Spaces:**
 
 **Personal (${activePersonal.length} active):**
 ${activePersonal.map(s => `• ${s.name} (${s.documentCount} documents)`).join('\n')}
@@ -507,12 +512,33 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
     // Add confirmation message
     const confirmationMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
-      content: '✅ Activated: Cardiology Care Coordination Notes (87 docs) - Peer-curated cardiac care coordination strategies\n✅ Activated: Cardiology Lifestyle Playbook (96 docs) - Comprehensive lifestyle guidelines for cardiac patients\n\nYour cardiac resources are now active. These include both peer-reviewed care coordination strategies and evidence-based lifestyle modifications for patients with heart conditions.',
+      content: `✅ Activated: Cardiology Care Coordination Notes (87 docs)
+✅ Activated: Cardiology Lifestyle Playbook (96 docs)
+
+**Integrated Care Coordination for Cardiac-Diabetic Patients:**
+
+Your cardiac resources are now active. You can now create comprehensive care plans that address:
+
+• **Coordinated Nutrition Plans**: Heart-healthy diets that manage blood glucose
+• **Exercise Protocols**: Safe cardiac rehabilitation with diabetes considerations  
+• **Medication Timing**: Coordinate cardiac meds with insulin/glucose management
+• **Multi-disciplinary Communication**: Templates for care team collaboration
+• **Patient Education Materials**: Integrated lifestyle modification resources
+
+These resources enable holistic patient care by addressing both conditions simultaneously through evidence-based lifestyle interventions.`,
       sender: 'assistant',
       timestamp: new Date(),
       quickReplies: [
-        { id: 'q1', text: 'View cardiac diet plans', action: 'view_cardiac_diet' },
-        { id: 'q2', text: 'Show exercise restrictions', action: 'show_cardiac_exercise' }
+        { id: 'q1', text: 'Create integrated care plan', action: 'create_care_plan' },
+        { id: 'q2', text: 'View coordination protocols', action: 'view_protocols' }
+      ],
+      actions: [
+        { 
+          id: 'publish-article', 
+          label: 'Publish Knowledge Article', 
+          action: 'publish_knowledge_article', 
+          variant: 'primary' 
+        }
       ]
     }
     setMessages(prev => [...prev, confirmationMessage])
@@ -681,6 +707,33 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
       activateOrgSpaces(['mo3'])
     } else if (action === 'select_peer') {
       activateSharedSpaces(['mo4'])
+    } else if (action === 'publish_knowledge_article') {
+      // Pre-populate with integrated care content
+      setArticleTitle('Integrated Care Coordination: Cardiac-Diabetic Patient Management')
+      setArticleContent(`# Integrated Care Coordination Protocol
+
+## Overview
+This protocol provides evidence-based guidelines for coordinating care between cardiac and diabetic conditions, emphasizing lifestyle interventions.
+
+## Key Principles
+1. **Synchronized Monitoring**: Coordinate glucose and cardiac markers
+2. **Unified Nutrition Plan**: Heart-healthy + glucose-controlled diet
+3. **Integrated Exercise Program**: Safe for both conditions
+4. **Medication Timing**: Optimize therapeutic windows
+
+## Implementation Steps
+- Initial assessment of both conditions
+- Create unified care plan
+- Regular multi-disciplinary team meetings
+- Patient education on self-management
+
+## Outcomes Tracking
+- HbA1c and cardiac biomarkers
+- Quality of life measures
+- Hospitalization rates
+- Patient satisfaction scores`)
+      
+      setShowPublishModal(true)
     }
   }
 
@@ -690,6 +743,31 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
       handleSendMessage(inputValue)
       setInputValue('')
     }
+  }
+
+  const handlePublishArticle = () => {
+    // Close modal
+    setShowPublishModal(false)
+    
+    // Add success message
+    const publishMessage: ChatMessage = {
+      id: `publish-${Date.now()}`,
+      content: '✅ Knowledge article published successfully!',
+      sender: 'assistant',
+      timestamp: new Date()
+    }
+    setMessages(prev => [...prev, publishMessage])
+    
+    // Trigger notification after a short delay
+    setTimeout(() => {
+      const notificationMessage: ChatMessage = {
+        id: `notify-${Date.now()}`,
+        content: 'Knowledge article updated',
+        sender: 'system',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, notificationMessage])
+    }, 500)
   }
 
   const handleBackToSelector = () => {
@@ -706,9 +784,58 @@ ${activeOrg.length > 0 ? activeOrg.map(s => `• ${s.name} (${s.documentCount} d
     return <ScenarioSelector onSelectScenario={handleScenarioSelect} />
   }
 
+  // Publish Modal Component
+  const PublishModal = () => {
+    if (!showPublishModal) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Publish Knowledge Article</h2>
+            <p className="text-sm text-gray-600 mt-1">Create and publish a knowledge article for your team</p>
+          </div>
+          
+          <div className="px-6 py-4 flex-1 overflow-y-auto">
+            <input
+              type="text"
+              placeholder="Article Title"
+              value={articleTitle}
+              onChange={(e) => setArticleTitle(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            
+            <textarea
+              value={articleContent}
+              onChange={(e) => setArticleContent(e.target.value)}
+              placeholder="Write your knowledge article here..."
+              className="w-full h-96 px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+            />
+          </div>
+          
+          <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+            <button 
+              onClick={() => setShowPublishModal(false)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handlePublishArticle}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Publish Article
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Main application interface
   return (
     <div className="flex h-screen bg-gray-50">
+      <PublishModal />
       {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
